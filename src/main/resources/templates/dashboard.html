@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rank Tracker</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<main class="container">
+
+    <header>
+        <span class="brand">Rank<span>Tracker</span></span>
+        <h1 th:text="${domain}">example.com</h1>
+    </header>
+
+    <div class="error" th:if="${error}" th:text="${error}">Something went wrong.</div>
+
+    <section class="card alerts" th:if="${rows.?[alert != null].size() > 0}">
+        <h2>Alerts</h2>
+        <ul>
+            <li th:each="row : ${rows}" th:if="${row.alert != null}">
+                <strong th:text="${row.keyword}">keyword</strong> <span th:text="${row.alert}">entered the top 10</span>
+            </li>
+        </ul>
+    </section>
+
+    <section class="card">
+        <form class="add-keyword" th:action="@{/keywords}" method="post">
+            <input type="text" name="keyword" placeholder="Add a keyword, e.g. spring boot tutorial"
+                   maxlength="100" aria-label="Keyword" required autofocus>
+            <button type="submit">Track</button>
+        </form>
+
+        <p class="empty" th:if="${rows.isEmpty()}">No keywords yet. Add the searches your customers type into Google.</p>
+
+        <table th:if="${!rows.isEmpty()}">
+            <thead>
+            <tr>
+                <th>Keyword</th>
+                <th class="num">Position</th>
+                <th class="num">Change</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="row : ${rows}">
+                <td th:text="${row.keyword}">spring boot tutorial</td>
+                <td class="num position" th:text="${row.position == null} ? '100+' : '#' + ${row.position}">#7</td>
+                <td class="num change" th:text="${row.change}"
+                    th:classappend="${row.change.startsWith('▲')} ? 'up' : 'down'">▲ 3</td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="card" th:if="${!days.isEmpty()}">
+        <h2>Position over time</h2>
+        <div class="chart"><canvas id="chart"></canvas></div>
+    </section>
+
+</main>
+
+<th:block th:if="${!days.isEmpty()}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <script th:inline="javascript">
+        const days = /*[[${days}]]*/ [];
+        const lines = /*[[${lines}]]*/ {};
+
+        new Chart(document.getElementById('chart'), {
+            type: 'line',
+            data: {
+                labels: days,
+                datasets: Object.entries(lines).map(([keyword, positions]) => ({label: keyword, data: positions, tension: 0.25}))
+            },
+            options: {
+                maintainAspectRatio: false,
+                // #1 belongs at the top
+                scales: {y: {reverse: true, min: 1, ticks: {precision: 0}}}
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>
